@@ -185,7 +185,7 @@ clean:
 	.gdbinit \
 	$(UPROGS) \
 	lib/*.o lib/*.d \
-	usr/*.o usr/*.d
+	usr/*.o usr/*.d usr/*.sym usr/*.asm
 
 # try to generate a unique GDB port
 GDBPORT = $(shell expr `id -u` % 5000 + 25000)
