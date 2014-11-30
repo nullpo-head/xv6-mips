@@ -136,15 +136,15 @@ vectors.S: vectors.pl
 
 ULIB = lib/ulib.o lib/usys.o lib/printf.o lib/umalloc.o
 
-_%: %.o $(ULIB)
+_%: usr/%.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
-_forktest: forktest.o $(ULIB)
+_forktest: usr/forktest.o $(ULIB)
 	# forktest has less library code linked in - needs to be small
 	# in order to be able to max out the proc table.
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o lib/ulib.o lib/usys.o
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest usr/forktest.o lib/ulib.o lib/usys.o
 	$(OBJDUMP) -S _forktest > forktest.asm
 
 mkfs: mkfs.c fs.h
@@ -184,7 +184,8 @@ clean:
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs mkfs \
 	.gdbinit \
 	$(UPROGS) \
-	lib/*.o lib/*.d
+	lib/*.o lib/*.d \
+	usr/*.o usr/*.d
 
 # make a printout
 FILES = $(shell grep -v '^\#' runoff.list)
