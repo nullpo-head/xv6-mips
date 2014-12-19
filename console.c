@@ -288,6 +288,5 @@ consoleinit(void)
   cons.locking = 1;
 
   picenable(IRQ_KBD);
-  ioapicenable(IRQ_KBD, 0);
 }
 

@@ -41,11 +41,15 @@ uartinit(void)
   inb(COM1+2);
   inb(COM1+0);
   picenable(IRQ_COM1);
-  ioapicenable(IRQ_COM1, 0);
   
   // Announce that we're here.
   for(p="xv6...\n"; *p; p++)
     uartputc(*p);
+}
+
+void
+microdelay(int us)
+{
 }
 
 void

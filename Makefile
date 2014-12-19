@@ -5,10 +5,8 @@ OBJS = \
 	file.o\
 	fs.o\
 	ide.o\
-	ioapic.o\
 	kalloc.o\
 	kbd.o\
-	lapic.o\
 	log.o\
 	main.o\
 	mp.o\
@@ -99,20 +97,14 @@ bootblock: bootasm.S bootmain.c
 	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
 	./sign.pl bootblock
 
-entryother: entryother.S
-	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c entryother.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7000 -o bootblockother.o entryother.o
-	$(OBJCOPY) -S -O binary -j .text bootblockother.o entryother
-	$(OBJDUMP) -S bootblockother.o > entryother.asm
-
 initcode: initcode.S
 	$(CC) $(CFLAGS) -nostdinc -I. -c initcode.S
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o initcode.out initcode.o
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
 
-kernel: $(OBJS) entry.o entryother initcode kernel.ld
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
+kernel: $(OBJS) entry.o initcode kernel.ld
+	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode
 	$(OBJDUMP) -S kernel > kernel.asm
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 
@@ -123,12 +115,12 @@ kernel: $(OBJS) entry.o entryother initcode kernel.ld
 # great for testing the kernel on real hardware without
 # needing a scratch disk.
 MEMFSOBJS = $(filter-out ide.o,$(OBJS)) memide.o
-kernelmemfs: $(MEMFSOBJS) entry.o entryother initcode kernel.ld fs.img
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernelmemfs entry.o  $(MEMFSOBJS) -b binary initcode entryother fs.img
+kernelmemfs: $(MEMFSOBJS) entry.o initcode kernel.ld fs.img
+	$(LD) $(LDFLAGS) -T kernel.ld -o kernelmemfs entry.o  $(MEMFSOBJS) -b binary initcode fs.img
 	$(OBJDUMP) -S kernelmemfs > kernelmemfs.asm
 	$(OBJDUMP) -t kernelmemfs | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernelmemfs.sym
 
-tags: $(OBJS) entryother.S _init
+tags: $(OBJS) _init
 	etags *.S *.c
 
 vectors.S: vectors.pl
@@ -180,7 +172,7 @@ fs.img: mkfs README $(UPROGS)
 
 clean: 
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
-	*.o *.d *.asm *.sym vectors.S bootblock entryother \
+	*.o *.d *.asm *.sym vectors.S bootblock \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs mkfs \
 	.gdbinit \
 	$(UPROGS) \
