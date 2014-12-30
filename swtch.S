@@ -7,7 +7,7 @@
 
 .globl swtch
 swtch:
-  movl 4(%esp), %eax
+/*  movl 4(%esp), %eax
   movl 8(%esp), %edx
 
   # Save old callee-save registers
@@ -25,4 +25,4 @@ swtch:
   popl %esi
   popl %ebx
   popl %ebp
-  ret
+  ret*/

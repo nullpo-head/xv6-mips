@@ -3,7 +3,8 @@
 #include "param.h"
 #include "memlayout.h"
 #include "mmu.h"
-#include "x86.h"
+#include "mips.h"
+#include "regs.h"
 #include "proc.h"
 #include "spinlock.h"
 
@@ -269,7 +270,7 @@ scheduler(void)
 
   for(;;){
     // Enable interrupts on this processor.
-    sti();
+    enableinterrupt();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
@@ -308,7 +309,7 @@ sched(void)
     panic("sched locks");
   if(proc->state == RUNNING)
     panic("sched running");
-  if(readeflags()&FL_IF)
+  if(readcop0(COP0_STATUS)&COP0_STATUS_IE)
     panic("sched interruptible");
   intena = cpu->intena;
   swtch(&proc->context, cpu->scheduler);

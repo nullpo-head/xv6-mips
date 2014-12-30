@@ -1,5 +1,5 @@
 // This file contains definitions for the 
-// x86 memory management unit (MMU).
+// MIPS memory management unit (MMU).
 
 // Eflags register
 #define FL_CF           0x00000001      // Carry Flag

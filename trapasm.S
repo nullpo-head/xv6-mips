@@ -4,7 +4,7 @@
 .globl alltraps
 alltraps:
   # Build trap frame.
-  pushl %ds
+/*  pushl %ds
   pushl %es
   pushl %fs
   pushl %gs
@@ -21,15 +21,15 @@ alltraps:
   # Call trap(tf), where tf=%esp
   pushl %esp
   call trap
-  addl $4, %esp
+  addl $4, %esp*/
 
   # Return falls through to trapret...
 .globl trapret
 trapret:
-  popal
+/*  popal
   popl %gs
   popl %fs
   popl %es
   popl %ds
   addl $0x8, %esp  # trapno and errcode
-  iret
+  iret*/

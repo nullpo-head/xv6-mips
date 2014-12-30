@@ -28,6 +28,7 @@ OBJS = \
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
+TOOLPREFIX = mipsel-sde-elf-
 
 # Using native tools (e.g., on X86 Linux)
 #TOOLPREFIX = 
@@ -50,6 +51,7 @@ endif
 
 # If the makefile can't find QEMU, specify its path here
 # QEMU = qemu-system-i386
+QEMU = qemu-system-mipsel
 
 # Try to infer the correct QEMU
 ifndef QEMU
@@ -73,11 +75,12 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 #CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
-CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -MD -gdwarf-2 -m32 -Werror -fno-omit-frame-pointer -I.
+CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -Wunused-function -MD -gdwarf-2 -march=mips4 -G0 -fno-omit-frame-pointer -I.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-ASFLAGS = -m32 -gdwarf-2 -Wa,-divide -I.
+#ASFLAGS = -gdwarf-2 -Wa,-divide -I.
+ASFLAGS = -gdwarf-2 -I. -G0
 # FreeBSD ld wants ``elf_i386_fbsd''
-LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null) -L.
+LDFLAGS += -m elf32ltsmip -L. -G0
 
 xv6.img: bootblock kernel fs.img
 	dd if=/dev/zero of=xv6.img count=10000
@@ -188,9 +191,12 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -hdb fs.img xv6.img -smp $(CPUS) -m 512 $(QEMUEXTRA)
+# QEMUOPTS = -hdb fs.img -kernel kernel -smp $(CPUS) -m 512 $(QEMUEXTRA)
+QEMUOPTS = -kernel kernel -smp 1 -m 256 -M mipssim
 
-qemu: fs.img xv6.img
+#qemu: fs.img xv6.img
+#	$(QEMU) -serial mon:stdio $(QEMUOPTS)
+qemu: kernel
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
@@ -202,9 +208,14 @@ qemu-nox: fs.img xv6.img
 .gdbinit: .gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
-qemu-gdb: fs.img xv6.img .gdbinit
+#qemu-gdb: fs.img xv6.img .gdbinit
+#	@echo "*** Now run 'gdb'." 1>&2
+#	$(QEMU) -serial mon:stdio $(QEMUOPTS) -S $(QEMUGDB)
+
+qemu-gdb: kernel .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
-	$(QEMU) -serial mon:stdio $(QEMUOPTS) -S $(QEMUGDB)
+	$(QEMU) -serial mon:stdio $(MIPSQEMUOPTS) -S $(QEMUGDB)
+
 
 qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2

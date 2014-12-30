@@ -3,7 +3,7 @@
 #include "types.h"
 #include "defs.h"
 #include "param.h"
-#include "x86.h"
+#include "mips.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
@@ -28,10 +28,7 @@ acquire(struct spinlock *lk)
   if(holding(lk))
     panic("acquire");
 
-  // The xchg is atomic.
-  // It also serializes, so that reads after acquire are not
-  // reordered before it. 
-  while(xchg(&lk->locked, 1) != 0)
+  while(atomic_swap(&lk->locked, 1) != 0)
     ;
 
   // Record info about lock acquisition for debugging.
@@ -49,16 +46,7 @@ release(struct spinlock *lk)
   lk->pcs[0] = 0;
   lk->cpu = 0;
 
-  // The xchg serializes, so that reads before release are 
-  // not reordered after it.  The 1996 PentiumPro manual (Volume 3,
-  // 7.2) says reads can be carried out speculatively and in
-  // any order, which implies we need to serialize here.
-  // But the 2007 Intel 64 Architecture Memory Ordering White
-  // Paper says that Intel 64 and IA-32 will not move a load
-  // after a store. So lock->locked = 0 would work here.
-  // The xchg being asm volatile ensures gcc emits it after
-  // the above assignments (and after the critical section).
-  xchg(&lk->locked, 0);
+  atomic_swap(&lk->locked, 0);
 
   popcli();
 }
@@ -96,12 +84,12 @@ holding(struct spinlock *lock)
 void
 pushcli(void)
 {
-  int eflags;
+  int statusreg;
   
-  eflags = readeflags();
-  cli();
+  statusreg = readcop0(COP0_STATUS);
+  disableinterrupt();
   if(cpu->ncli++ == 0)
-    cpu->intena = eflags & FL_IF;
+    cpu->intena = statusreg & FL_IF;
 }
 
 void
@@ -112,6 +100,6 @@ popcli(void)
   if(--cpu->ncli < 0)
     panic("popcli");
   if(cpu->ncli == 0 && cpu->intena)
-    sti();
+    enableinterrupt();
 }
 

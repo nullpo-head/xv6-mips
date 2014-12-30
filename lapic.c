@@ -7,7 +7,7 @@
 #include "memlayout.h"
 #include "traps.h"
 #include "mmu.h"
-#include "x86.h"
+#include "mips.h"
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
 #define ID      (0x0020/4)   // ID
@@ -99,20 +99,7 @@ lapicinit(void)
 int
 cpunum(void)
 {
-  // Cannot call cpu when interrupts are enabled:
-  // result not guaranteed to last long enough to be used!
-  // Would prefer to panic but even printing is chancy here:
-  // almost everything, including cprintf and panic, calls cpu,
-  // often indirectly through acquire and release.
-  if(readeflags()&FL_IF){
-    static int n;
-    if(n++ == 0)
-      cprintf("cpu called from %x with interrupts enabled\n",
-        __builtin_return_address(0));
-  }
-
-  if(lapic)
-    return lapic[ID]>>24;
+  // At present, we do not support multicore for MIPS.
   return 0;
 }
 

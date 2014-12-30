@@ -7,7 +7,7 @@
 
 #include "types.h"
 #include "elf.h"
-#include "x86.h"
+#include "mips.h"
 #include "memlayout.h"
 
 #define SECTSIZE  512

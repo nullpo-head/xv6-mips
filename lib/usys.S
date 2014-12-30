@@ -2,9 +2,9 @@
 #include "traps.h"
 
 #define SYSCALL(name) \
-  .globl name; \
-  name: \
-    movl $SYS_ ## name, %eax; \
+  .globl name; #\
+  name: #\
+/*    movl $SYS_ ## name, %eax; \
     int $T_SYSCALL; \
     ret
 
@@ -28,4 +28,4 @@ SYSCALL(dup)
 SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
-SYSCALL(uptime)
+SYSCALL(uptime)*/

@@ -12,7 +12,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "x86.h"
+#include "mips.h"
 
 static void consputc(int);
 
@@ -108,7 +108,7 @@ panic(char *s)
   int i;
   uint pcs[10];
   
-  cli();
+  disableinterrupt();
   cons.locking = 0;
   cprintf("cpu%d: panic: ", cpu->id);
   cprintf(s);
@@ -161,7 +161,7 @@ void
 consputc(int c)
 {
   if(panicked){
-    cli();
+    disableinterrupt();
     for(;;)
       ;
   }
@@ -170,7 +170,7 @@ consputc(int c)
     uartputc('\b'); uartputc(' '); uartputc('\b');
   } else
     uartputc(c);
-  cgaputc(c);
+  //cgaputc(c);
 }
 
 #define INPUT_BUF 128
@@ -287,6 +287,6 @@ consoleinit(void)
   devsw[CONSOLE].read = consoleread;
   cons.locking = 1;
 
-  picenable(IRQ_KBD);
+  //picenable(IRQ_KBD);
 }
 

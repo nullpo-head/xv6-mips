@@ -2,7 +2,7 @@
 #include "stat.h"
 #include "fcntl.h"
 #include "user.h"
-#include "x86.h"
+#include "mips.h"
 
 char*
 strcpy(char *s, char *t)

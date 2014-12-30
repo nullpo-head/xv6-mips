@@ -1,5 +1,5 @@
 #include "types.h"
-#include "x86.h"
+#include "mips.h"
 
 void*
 memset(void *dst, int c, uint n)

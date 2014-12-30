@@ -4,7 +4,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "x86.h"
+#include "mips.h"
 
 //static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
@@ -20,10 +20,11 @@ main(void)
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
   kvmalloc();      // kernel page table
   seginit();       // set up segments
-  cprintf("\ncpu%d: starting xv6\n\n", cpu->id);
+  //cprintf("\ncpu%d: starting xv6\n\n", cpu->id);
   picinit();       // interrupt controller
   consoleinit();   // I/O devices & their interrupts
   uartinit();      // serial port
+  /*
   pinit();         // process table
   tvinit();        // trap vectors
   binit();         // buffer cache
@@ -36,6 +37,7 @@ main(void)
   userinit();      // first user process
   // Finish setting up this processor in mpmain.
   mpmain();
+  */
 }
 
 /*
@@ -55,7 +57,7 @@ mpmain(void)
 {
   cprintf("cpu%d: starting\n", cpu->id);
   idtinit();       // load idt register
-  xchg(&cpu->started, 1); // tell startothers() we're up
+  atomic_swap(&cpu->started, 1); // tell startothers() we're up
   scheduler();     // start running processes
 }
 

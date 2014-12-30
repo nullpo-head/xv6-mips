@@ -9,7 +9,7 @@
 #include "file.h"
 #include "mmu.h"
 #include "proc.h"
-#include "x86.h"
+#include "mips.h"
 
 #define COM1    0x3f8
 
