@@ -2,8 +2,7 @@
 
 #include "regs.h"
 
-// static int io_port_base = 0xA0000000;
-static int io_port_base = 0x1fd00000;
+static int io_port_base = 0xb4000000;
 
 static inline uchar
 inb(ushort port)
