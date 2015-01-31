@@ -31,8 +31,17 @@
 
 #define IRQ_TIMER        0
 #define IRQ_KBD          1
+#define IRQ_CASCADE      2
 #define IRQ_COM1         4
+#define IRQ_SPURIOUS_MS  7
 #define IRQ_IDE         14
 #define IRQ_ERROR       19
-#define IRQ_SPURIOUS    31
+#define IRQ_SPURIOUS_SL 31
 
+// Processor-defined:
+#define EXC_INT          0        // Interrupt
+#define EXC_SYSCALL      (8 << 2) // system call
+
+// Exception entry points
+#define EV_TLBREFILL  0x80000000
+#define EV_OTHERS     0x80000180 

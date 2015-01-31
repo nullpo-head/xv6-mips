@@ -58,6 +58,7 @@ exec(char *path, char **argv)
   sz = PGROUNDUP(sz);
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
+  // TODO: Maybe we have to replace this by clearelov or something.
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
 
@@ -90,8 +91,8 @@ exec(char *path, char **argv)
   oldpgdir = proc->pgdir;
   proc->pgdir = pgdir;
   proc->sz = sz;
-  proc->tf->eip = elf.entry;  // main
-  proc->tf->esp = sp;
+  proc->tf->epc = elf.entry;  // main
+  proc->tf->sp = sp;
   switchuvm(proc);
   freevm(oldpgdir);
   return 0;

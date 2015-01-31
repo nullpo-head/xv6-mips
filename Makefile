@@ -78,18 +78,16 @@ OBJDUMP = $(TOOLPREFIX)objdump
 CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -Wunused-function -MD -gdwarf-2 -march=mips4 -G0 -fno-omit-frame-pointer -I.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 #ASFLAGS = -gdwarf-2 -Wa,-divide -I.
-ASFLAGS = -gdwarf-2 -I. -G0
+ASFLAGS = -gdwarf-2 -I. -G0 -march=mips4
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m elf32ltsmip -L. -G0
 
-xv6.img: bootblock kernel fs.img
+xv6.img: kernel fs.img
 	dd if=/dev/zero of=xv6.img count=10000
-	dd if=bootblock of=xv6.img conv=notrunc
 	dd if=kernel of=xv6.img seek=1 conv=notrunc
 
-xv6memfs.img: bootblock kernelmemfs
+xv6memfs.img: kernelmemfs
 	dd if=/dev/zero of=xv6memfs.img count=10000
-	dd if=bootblock of=xv6memfs.img conv=notrunc
 	dd if=kernelmemfs of=xv6memfs.img seek=1 conv=notrunc
 
 bootblock: bootasm.S bootmain.c
@@ -143,7 +141,7 @@ _forktest: usr/forktest.o $(ULIB)
 	$(OBJDUMP) -S _forktest > forktest.asm
 
 mkfs: tools/mkfs.c fs.h
-	gcc -Werror -Wall -o mkfs tools/mkfs.c -idirafter .
+	gcc -g -Werror -Wall -o mkfs tools/mkfs.c -idirafter .
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -151,7 +149,7 @@ mkfs: tools/mkfs.c fs.h
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 .PRECIOUS: %.o
 
-UPROGS=\
+BACK_UPROGS=\
 	_cat\
 	_echo\
 	_forktest\
@@ -167,6 +165,23 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+
+UPROGS=\
+	_cat\
+	_echo\
+	_forktest\
+	_grep\
+	_init\
+	_kill\
+	_ln\
+	_ls\
+	_mkdir\
+	_rm\
+	_sh\
+	_stressfs\
+	_wc\
+	_zombie\
+
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -189,18 +204,17 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 ifndef CPUS
-CPUS := 2
+CPUS := 1
 endif
 # QEMUOPTS = -hdb fs.img -kernel kernel -smp $(CPUS) -m 512 $(QEMUEXTRA)
-QEMUOPTS = -kernel kernel -smp 1 -m 256 -M mipssim
+QEMUOPTS = -hdb fs.img -kernel kernel -smp 1 -m 256 -M mips
+QEMUOPTSMEMFS = -kernel kernelmemfs -smp 1 -m 256 -M mips
 
-#qemu: fs.img xv6.img
-#	$(QEMU) -serial mon:stdio $(QEMUOPTS)
-qemu: kernel
+qemu: fs.img kernel
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
-qemu-memfs: xv6memfs.img
-	$(QEMU) xv6memfs.img -smp $(CPUS) -m 256
+qemu-memfs: kernelmemfs
+	$(QEMU) -serial mon:stdio $(QEMUOPTSMEMFS)
 
 qemu-nox: fs.img xv6.img
 	$(QEMU) -nographic $(QEMUOPTS)
@@ -212,11 +226,15 @@ qemu-nox: fs.img xv6.img
 #	@echo "*** Now run 'gdb'." 1>&2
 #	$(QEMU) -serial mon:stdio $(QEMUOPTS) -S $(QEMUGDB)
 
-qemu-gdb: kernel .gdbinit
+qemu-gdb: fs.img kernel .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
-	$(QEMU) -serial mon:stdio $(MIPSQEMUOPTS) -S $(QEMUGDB)
+	$(QEMU) -serial mon:stdio $(QEMUOPTS) -S $(QEMUGDB)
 
+qemu-memfs-gdb: kernelmemfs .gdbinit
+	@echo "*** Now run 'gdb'." 1>&2
+	$(QEMU) -serial mon:stdio $(QEMUOPTSMEMFS) -S $(QEMUGDB)
 
 qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
+

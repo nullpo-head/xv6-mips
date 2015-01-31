@@ -6,6 +6,7 @@
 #include "mips.h"
 #include "memlayout.h"
 #include "mmu.h"
+#include "regs.h"
 #include "proc.h"
 #include "spinlock.h"
 
@@ -84,18 +85,15 @@ holding(struct spinlock *lock)
 void
 pushcli(void)
 {
-  int statusreg;
-  
-  statusreg = readcop0(COP0_STATUS);
   disableinterrupt();
   if(cpu->ncli++ == 0)
-    cpu->intena = statusreg & FL_IF;
+    cpu->intena = read_cop0_status() & STATUS_IE;
 }
 
 void
 popcli(void)
 {
-  if(readeflags()&FL_IF)
+  if(read_cop0_status()&STATUS_IE)
     panic("popcli - interruptible");
   if(--cpu->ncli < 0)
     panic("popcli");

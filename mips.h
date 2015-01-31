@@ -101,17 +101,23 @@ readeflags(void)
 }
 
 static inline uint
-readcop0(uint regnum)
+read_cop0_status(void)
 {
   uint val;
-  asm volatile("mfc0 %0, %1" : "=r" (val) : "r" (regnum));
+  asm volatile("mfc0 %0, $12" : "=r" (val));
   return val;
 }
 
 static inline void
-writecop0(uint regnum, uint val)
+write_cop0_status(uint val)
 {
-  asm volatile("mtc0 %0, %1" : : "r" (val), "r" (regnum));
+  asm volatile("mtc0 %0, $12" : : "r" (val));
+}
+
+static inline void
+set_ra(void *val)
+{
+  asm volatile("move $31, %0" : : "r"(val));
 }
 
 static inline void
@@ -126,16 +132,23 @@ cli(void)
   //asm volatile("cli");
 }
 
+// TODO
 static inline void
 disableinterrupt(void)
 {
-  writecop0(COP0_STATUS, readcop0(COP0_STATUS)&(~COP0_STATUS_IE));
+  write_cop0_status(read_cop0_status() & (~STATUS_IE));
 }
 
 static inline void
 enableinterrupt(void)
 {
-  writecop0(COP0_STATUS, readcop0(COP0_STATUS)|COP0_STATUS_IE);
+  write_cop0_status(read_cop0_status() | STATUS_IE);
+}
+
+static inline void
+clerl(void)
+{
+  write_cop0_status(read_cop0_status() & ~STATUS_ERL);
 }
 
 static inline void
@@ -163,11 +176,11 @@ atomic_swap(volatile uint *addr, uint newval)
 {
   uint oldval;
   asm volatile("ll %0, 0(%1)\n\t"
-               "addu $8, $0, %2\n\t"
-               "sc $8, 0(%1)" :
-               "=r" (oldval) :
+               "move $t0, %2\n\t"
+               "sc $t0, 0(%1)" :
+               "=&r" (oldval) :
                "r" (addr), "r" (newval) :
-               "8");
+               "t0");
   return oldval;
 }
 
@@ -187,39 +200,47 @@ lcr3(uint val)
 }
 
 //PAGEBREAK: 36
-// Layout of the trap frame built on the stack by the
-// hardware and by trapasm.S, and passed to trap().
+// Layout of the trap frame built on the stack
 struct trapframe {
-  // registers as pushed by pusha
-  uint edi;
-  uint esi;
-  uint ebp;
-  uint oesp;      // useless & ignored
-  uint ebx;
-  uint edx;
-  uint ecx;
-  uint eax;
+  // general registers
+  uint at;
+  uint v0;
+  uint v1;
+  uint a0;
+  uint a1;
+  uint a2;
+  uint a3;
+  uint t0;
+  uint t1;
+  uint t2;
+  uint t3;
+  uint t4;
+  uint t5;
+  uint t6;
+  uint t7;
+  uint s0;
+  uint s1;
+  uint s2;
+  uint s3;
+  uint s4;
+  uint s5;
+  uint s6;
+  uint s7;
+  uint t8;
+  uint t9;
+  uint k0;
+  uint k1;
+  uint gp;
+  uint sp;
+  uint fp;
+  uint ra;
+  
+  // Mul / Div special registers
+  uint hi;
+  uint lo;
 
-  // rest of trap frame
-  ushort gs;
-  ushort padding1;
-  ushort fs;
-  ushort padding2;
-  ushort es;
-  ushort padding3;
-  ushort ds;
-  ushort padding4;
-  uint trapno;
-
-  // below here defined by x86 hardware
-  uint err;
-  uint eip;
-  ushort cs;
-  ushort padding5;
-  uint eflags;
-
-  // below here only when crossing rings, such as from user to kernel
-  uint esp;
-  ushort ss;
-  ushort padding6;
+  uint epc;
+  uint error_epc;
+  uint cause;
+  uint status;
 };

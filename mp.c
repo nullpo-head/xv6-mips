@@ -1,6 +1,5 @@
 // Multiprocessor support
-// Search memory for MP description structures.
-// http://developer.intel.com/design/pentium/datashts/24201606.pdf
+// We do not support multiprocessor now, so we just do some fake initialization.
 
 #include "types.h"
 #include "defs.h"
@@ -12,6 +11,7 @@
 #include "proc.h"
 
 struct cpu cpus[NCPU];
+struct cpu *cpu = &cpus[0];  // &cpus[cpunum()]
 int ismp;
 int ncpu;
 uchar ioapicid;
@@ -19,9 +19,8 @@ uchar ioapicid;
 void
 mpinit(void)
 {
-  // Didn't like what we found; fall back to no MP.
   ncpu = 1;
   cpus[ncpu].id = ncpu;
-  // ncpu++;
   ioapicid = 0;
+  ismp = 0;
 }

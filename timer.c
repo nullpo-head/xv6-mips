@@ -26,7 +26,7 @@ timerinit(void)
 {
   // Interrupt 100 times/sec.
   outb(TIMER_MODE, TIMER_SEL0 | TIMER_RATEGEN | TIMER_16BIT);
-  outb(IO_TIMER1, TIMER_DIV(100) % 256);
-  outb(IO_TIMER1, TIMER_DIV(100) / 256);
+  outb(IO_TIMER1, TIMER_DIV(10) % 256);
+  outb(IO_TIMER1, TIMER_DIV(10) / 256);
   picenable(IRQ_TIMER);
 }

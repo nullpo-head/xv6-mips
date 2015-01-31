@@ -57,8 +57,6 @@ struct segdesc {
   uint s : 1;          // 0 = system, 1 = application
   uint dpl : 2;        // Descriptor Privilege Level
   uint p : 1;          // Present
-  uint lim_19_16 : 4;  // High bits of segment limit
-  uint avl : 1;        // Unused (available for software use)
   uint rsv1 : 1;       // Reserved
   uint db : 1;         // 0 = 16-bit segment, 1 = 32-bit segment
   uint g : 1;          // Granularity: limit scaled by 4K when set
@@ -102,20 +100,26 @@ struct segdesc {
 
 // A virtual address 'la' has a three-part structure as follows:
 //
-// +--------10------+-------10-------+---------12----------+
-// | Page Directory |   Page Table   | Offset within Page  |
-// |      Index     |      Index     |                     |
-// +----------------+----------------+---------------------+
-//  \--- PDX(va) --/ \--- PTX(va) --/ 
+// +--------10------+-------09-----+1+---------12----------+
+// | Page Directory |   Page Table | | Offset within Page  |
+// |      Index     |      Index   | |                     |
+// +----------------+--------------+-+---------------------+
+//  \--- PDX(va) --/ \-- PTX(va) -/ 
 
 // page directory index
 #define PDX(va)         (((uint)(va) >> PDXSHIFT) & 0x3FF)
 
 // page table index
-#define PTX(va)         (((uint)(va) >> PTXSHIFT) & 0x3FF)
+#define PTX(va)         (((uint)(va) >> PTXSHIFT) & 0x1FF)
+
+// EntryLo 0 or EntryLo1 ?
+#define ELX(va)         ((uint)(((uint)(va) >> ELXSHIFT) & 0x1))
 
 // construct virtual address from indexes and offset
 #define PGADDR(d, t, o) ((uint)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
+
+// construct PTE from EntryLo0 and EntryLo1
+#define PTE(e0, e1) ((ulonglong) (e0) << 4 | (e1))
 
 // Page directory and page table constants.
 #define NPDENTRIES      1024    // # directory entries per page directory
@@ -123,29 +127,28 @@ struct segdesc {
 #define PGSIZE          4096    // bytes mapped by a page
 
 #define PGSHIFT         12      // log2(PGSIZE)
-#define PTXSHIFT        12      // offset of PTX in a linear address
-#define PDXSHIFT        22      // offset of PDX in a linear address
+#define PTXSHIFT        13      // offset of PTX in a virtual address
+#define ELXSHIFT        12      // offset of ELX in a virtual address
+#define PDXSHIFT        22      // offset of PDX in a virtual address
 
 #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
-// Page table/directory entry flags.
-#define PTE_P           0x001   // Present
-#define PTE_W           0x002   // Writeable
-#define PTE_U           0x004   // User
-#define PTE_PWT         0x008   // Write-Through
-#define PTE_PCD         0x010   // Cache-Disable
-#define PTE_A           0x020   // Accessed
-#define PTE_D           0x040   // Dirty
-#define PTE_PS          0x080   // Page Size
-#define PTE_MBZ         0x180   // Bits must be zero
+// EntryLo register flags
+#define ELO_G           0x001   // Global
+#define ELO_V           0x002   // Vaild
+#define ELO_D           0x004   // Dirty
+#define ELO_C           0x018   // Cache Control
 
-// Address in page table or page directory entry
-#define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
-#define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
+// Address in EntryLo register
+#define ELO_ADDR(pte)   ((uint)(pte) & ~0xFFF)
+#define ELO_FLAGS(pte)  ((uint)(pte) &  0x3FF)
+
+// Extract EntryLoN from PTE
+#define PTE_ELO(pte, n) ((uint)((pte) >> 4 * (1 - (n))) & 0xFFFFFFFF)
 
 #ifndef __ASSEMBLER__
-typedef uint pte_t;
+typedef ulonglong pte_t;
 
 // Task state segment format
 struct taskstate {

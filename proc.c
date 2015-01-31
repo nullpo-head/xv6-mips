@@ -14,6 +14,7 @@ struct {
 } ptable;
 
 static struct proc *initproc;
+struct proc *proc = 0;  // cpus[cpunum()].proc
 
 int nextpid = 1;
 extern void forkret(void);
@@ -63,13 +64,10 @@ found:
   
   // Set up new context to start executing at forkret,
   // which returns to trapret.
-  sp -= 4;
-  *(uint*)sp = (uint)trapret;
-
   sp -= sizeof *p->context;
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
-  p->context->eip = (uint)forkret;
+  p->context->ra = (uint)forkret;
 
   return p;
 }
@@ -89,13 +87,8 @@ userinit(void)
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
   p->sz = PGSIZE;
   memset(p->tf, 0, sizeof(*p->tf));
-  p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
-  p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
-  p->tf->es = p->tf->ds;
-  p->tf->ss = p->tf->ds;
-  p->tf->eflags = FL_IF;
-  p->tf->esp = PGSIZE;
-  p->tf->eip = 0;  // beginning of initcode.S
+  p->tf->sp = PGSIZE;
+  p->tf->epc = 0;  // beginning of initcode.S
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -148,7 +141,7 @@ fork(void)
   *np->tf = *proc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
-  np->tf->eax = 0;
+  np->tf->v0 = 0;
 
   for(i = 0; i < NOFILE; i++)
     if(proc->ofile[i])
@@ -271,6 +264,7 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     enableinterrupt();
+    clerl();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
@@ -309,7 +303,7 @@ sched(void)
     panic("sched locks");
   if(proc->state == RUNNING)
     panic("sched running");
-  if(readcop0(COP0_STATUS)&COP0_STATUS_IE)
+  if(read_cop0_status()&STATUS_IE)
     panic("sched interruptible");
   intena = cpu->intena;
   swtch(&proc->context, cpu->scheduler);
@@ -340,10 +334,13 @@ forkret(void)
     // of a regular process (e.g., they call sleep), and thus cannot 
     // be run from main().
     first = 0;
+    cprintf("test\n");
     initlog();
+    cprintf("test2\n");
   }
   
-  // Return to "caller", actually trapret (see allocproc).
+  // Return to "caller", actually trapret
+  set_ra(trapret);
 }
 
 // Atomically release lock and sleep on chan.
@@ -457,7 +454,7 @@ procdump(void)
       state = "???";
     cprintf("%d %s %s", p->pid, state, p->name);
     if(p->state == SLEEPING){
-      getcallerpcs((uint*)p->context->ebp+2, pc);
+      getcallerpcs((uint*)p->context->ra, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
         cprintf(" %p", pc[i]);
     }

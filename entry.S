@@ -10,10 +10,14 @@
 _start:
   # Disable interrput
   mfc0   $t0, $COP0_STATUS
-  li     $t1, COP0_STATUS_IE
+  li     $t1, STATUS_IE
   li     $t2, -1
   xor    $t1, $t1, $t2
   and    $t0, $t0, $t1
+
+  # Setup IM registers preparing for enabling interrput
+  li     $t1, STATUS_IM
+  or     $t0, $t0, $t1
   mtc0   $t0, $COP0_STATUS
   
   # Set up the stack pointer.

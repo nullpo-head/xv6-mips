@@ -57,7 +57,7 @@ lapicinit(void)
     return;
 
   // Enable local APIC; set spurious interrupt vector.
-  lapicw(SVR, ENABLE | (T_IRQ0 + IRQ_SPURIOUS));
+  lapicw(SVR, ENABLE | (T_IRQ0 + IRQ_SPURIOUS_MS));
 
   // The timer repeatedly counts down at bus frequency
   // from lapic[TICR] and then issues an interrupt.  

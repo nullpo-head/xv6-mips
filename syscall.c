@@ -45,7 +45,7 @@ fetchstr(uint addr, char **pp)
 int
 argint(int n, int *ip)
 {
-  return fetchint(proc->tf->esp + 4 + 4*n, ip);
+  return fetchint(proc->tf->sp + 4 + 4*n, ip);
 }
 
 // Fetch the nth word-sized system call argument as a pointer
@@ -128,12 +128,12 @@ syscall(void)
 {
   int num;
 
-  num = proc->tf->eax;
+  num = proc->tf->v0;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    proc->tf->eax = syscalls[num]();
+    proc->tf->v0 = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             proc->pid, proc->name, num);
-    proc->tf->eax = -1;
+    proc->tf->v0 = -1;
   }
 }

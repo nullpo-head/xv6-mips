@@ -94,7 +94,10 @@ void            mpstartthem(void);
 
 // picirq.c
 void            picenable(int);
+void            picdisable(int);
 void            picinit(void);
+int             picgetirq(void);
+void            picsendeoi(int);
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
@@ -156,6 +159,12 @@ void            idtinit(void);
 extern uint     ticks;
 void            tvinit(void);
 extern struct spinlock tickslock;
+
+// trapasm.S
+void tlbrefill(void);
+void tlbrefill_end(void);
+void gentraps(void);
+void gentraps_end(void);
 
 // uart.c
 void            uartinit(void);

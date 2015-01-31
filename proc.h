@@ -6,7 +6,6 @@ struct cpu {
   uchar id;                    // Local APIC ID; index into cpus[] below
   struct context *scheduler;   // swtch() here to enter scheduler
   struct taskstate ts;         // Used by x86 to find stack for interrupt
-  struct segdesc gdt[NSEGS];   // x86 global descriptor table
   volatile uint started;       // Has the CPU started?
   int ncli;                    // Depth of pushcli nesting.
   int intena;                  // Were interrupts enabled before pushcli?
@@ -28,10 +27,8 @@ extern int ncpu;
 // This is similar to how thread-local variables are implemented
 // in thread libraries such as Linux pthreads.
 
-//extern struct cpu *cpu asm("%gs:0");       // &cpus[cpunum()]
-//extern struct proc *proc asm("%gs:4");     // cpus[cpunum()].proc
-static struct cpu *cpu;       // &cpus[cpunum()]
-static struct proc *proc;     // cpus[cpunum()].proc
+extern struct cpu *cpu;       // &cpus[cpunum()]
+extern struct proc *proc;     // cpus[cpunum()].proc
 
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
@@ -45,11 +42,16 @@ static struct proc *proc;     // cpus[cpunum()].proc
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
 struct context {
-  uint edi;
-  uint esi;
-  uint ebx;
-  uint ebp;
-  uint eip;
+  uint s0;
+  uint s1;
+  uint s2;
+  uint s3;
+  uint s4;
+  uint s5;
+  uint s6;
+  uint s7;
+  uint s8;
+  uint ra;
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };

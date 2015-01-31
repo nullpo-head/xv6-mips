@@ -1,6 +1,7 @@
 // Intel 8259A programmable interrupt controllers.
 
 #include "types.h"
+#include "defs.h"
 #include "mips.h"
 #include "traps.h"
 
@@ -26,6 +27,12 @@ void
 picenable(int irq)
 {
   picsetmask(irqmask & ~(1<<irq));
+}
+
+void
+picdisable(int irq)
+{
+  picsetmask(irqmask | (1<<irq));
 }
 
 // Initialize the 8259A interrupt controllers.
@@ -59,7 +66,7 @@ picinit(void)
   //      can be hardwired).
   //    a:  1 = Automatic EOI mode
   //    p:  0 = MCS-80/85 mode, 1 = intel x86 mode
-  outb(IO_PIC1+1, 0x3);
+  outb(IO_PIC1+1, 0x1);
 
   // Set up slave (8259A-2)
   outb(IO_PIC2, 0x11);                  // ICW1
@@ -67,7 +74,7 @@ picinit(void)
   outb(IO_PIC2+1, IRQ_SLAVE);           // ICW3
   // NB Automatic EOI mode doesn't tend to work on the slave.
   // Linux source code says it's "to be investigated".
-  outb(IO_PIC2+1, 0x3);                 // ICW4
+  outb(IO_PIC2+1, 0x1);                 // ICW4
 
   // OCW3:  0ef01prs
   //   ef:  0x = NOP, 10 = clear specific mask, 11 = set specific mask
@@ -81,4 +88,37 @@ picinit(void)
 
   if(irqmask != 0xFFFF)
     picsetmask(irqmask);
+}
+
+
+// Read the IRQ number from the 8259A interrupt controllers.
+int
+picgetirq(void)
+{
+  int irq;
+
+  outb(IO_PIC1, 0x0c); // polling
+  irq = inb(IO_PIC1)&7;
+  if(irq == IRQ_CASCADE){
+    outb(IO_PIC2, 0x0c);
+    irq = (inb(IO_PIC2)&7) + 8;
+    outb(IO_PIC2, 0x0a); // restore polling mode
+  }
+  outb(IO_PIC1, 0x0a); // restore polling mode
+  return irq;
+}
+
+void
+picsendeoi(int irq)
+{
+  if(irq == IRQ_SPURIOUS_MS)
+    return;
+
+  if(irq <= 7){
+    outb(IO_PIC1, 0x60 + irq);
+  } else {
+    if(irq != IRQ_SPURIOUS_SL)
+      outb(IO_PIC2, 0x60 + irq - 8);
+    outb(IO_PIC1, 0x60 + IRQ_CASCADE);
+  }
 }
