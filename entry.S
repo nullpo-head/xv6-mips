@@ -8,15 +8,15 @@
 # By convention, the _start symbol specifies the ELF entry point.
 .globl _start
 _start:
-  # Disable interrput
   mfc0   $t0, $COP0_STATUS
+  # Disable interrput
   li     $t1, STATUS_IE
-  li     $t2, -1
-  xor    $t1, $t1, $t2
-  and    $t0, $t0, $t1
-
+  or     $t0, $t1, $t1
+  xor    $t0, $t0, $t1
   # Setup IM registers preparing for enabling interrput
-  li     $t1, STATUS_IM
+  ori    $t0, $t0, STATUS_IM
+  # COP0
+  lui    $t1, STATUS_CU0 >> 16
   or     $t0, $t0, $t1
   mtc0   $t0, $COP0_STATUS
   

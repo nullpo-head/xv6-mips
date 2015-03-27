@@ -2,6 +2,8 @@
 
 #include "regs.h"
 
+#define MAXASID 255
+
 static int io_port_base = 0xb4000000;
 
 static inline uchar
@@ -115,12 +117,6 @@ write_cop0_status(uint val)
 }
 
 static inline void
-set_ra(void *val)
-{
-  asm volatile("move $31, %0" : : "r"(val));
-}
-
-static inline void
 loadgs(ushort v)
 {
   //asm volatile("movw %0, %%gs" : : "r" (v));
@@ -197,6 +193,42 @@ static inline void
 lcr3(uint val) 
 {
   //asm volatile("movl %0,%%cr3" : : "r" (val));
+}
+
+static inline void
+tlbwi(pde_t entry_hi, pte_t entry_lo01)
+{
+  asm volatile("mtc0 %0, $10\n\t" // COP0_ENTRYHI
+               "mtc0 %1, $2\n\t"  // COP0_ENTRYLO0
+               "mtc0 %2, $3\n\t"  // COP0_ENTRYLO1
+               "ehb\n\t"
+               "tlbwr\n\t" : :
+               "r" (entry_hi), "r" ((entry_lo01 >> 32) & 0xffffffff), "r" (entry_lo01 & 0xffffffff)
+               );
+}
+
+static inline void
+tlbp(uint entry_hi, pte_t entry_lo01)
+{
+  asm volatile("mtc0 %0, $10\n\t" // COP0_ENTRYHI
+               "mtc0 %1, $2\n\t"  // COP0_ENTRYLO0
+               "mtc0 %2, $3\n\t"  // COP0_ENTRYLO1
+               "ehb\n\t"
+               "tlbp\n\t" : :
+               "r" (entry_hi), "r" ((entry_lo01 >> 32) & 0xffffffff), "r" (entry_lo01 & 0xffffffff)
+               );
+}
+
+static inline void
+tlbr(uint *entry_hi, uint *entry_lo0, uint *entry_lo1)
+{
+  asm volatile("ehb\n\t"
+               "tlbr\n\t"
+               "mfc0 %0, $10\n\t" // COP0_ENTRYHI
+               "mfc0 %1, $2\n\t"  // COP0_ENTRYL1
+               "mfc0 %2, $3\n\t"  // COP0_ENTRYLO1
+               "ehb" :
+               "=r" (*entry_hi), "=r" (*entry_lo0), "=r" (*entry_lo1) :);
 }
 
 //PAGEBREAK: 36

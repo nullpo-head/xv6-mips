@@ -44,7 +44,7 @@ exec(char *path, char **argv)
       continue;
     if(ph.memsz < ph.filesz)
       goto bad;
-    if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0)
+    if((sz = allocuvm(pgdir, proc->asid, sz, ph.vaddr + ph.memsz)) == 0)
       goto bad;
     if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
       goto bad;
@@ -56,7 +56,7 @@ exec(char *path, char **argv)
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
-  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
+  if((sz = allocuvm(pgdir, proc->asid, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
   // TODO: Maybe we have to replace this by clearelov or something.
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));

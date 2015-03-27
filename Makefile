@@ -13,6 +13,7 @@ OBJS = \
 	picirq.o\
 	pipe.o\
 	proc.o\
+	procasm.o\
 	spinlock.o\
 	string.o\
 	swtch.o\
@@ -192,7 +193,6 @@ clean:
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*.o *.d *.asm *.sym vectors.S bootblock \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs mkfs \
-	.gdbinit \
 	$(UPROGS) \
 	lib/*.o lib/*.d \
 	usr/*.o usr/*.d usr/*.sym usr/*.asm
@@ -219,8 +219,8 @@ qemu-memfs: kernelmemfs
 qemu-nox: fs.img xv6.img
 	$(QEMU) -nographic $(QEMUOPTS)
 
-.gdbinit: .gdbinit.tmpl
-	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
+#.gdbinit: .gdbinit.tmpl
+#	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
 #qemu-gdb: fs.img xv6.img .gdbinit
 #	@echo "*** Now run 'gdb'." 1>&2

@@ -119,7 +119,7 @@ struct segdesc {
 #define PGADDR(d, t, o) ((uint)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 
 // construct PTE from EntryLo0 and EntryLo1
-#define PTE(e0, e1) ((ulonglong) (e0) << 4 | (e1))
+#define PTE(e0, e1)     ((ulonglong) (((ulonglong)(e0) << 32) | (e1)))
 
 // Page directory and page table constants.
 #define NPDENTRIES      1024    // # directory entries per page directory
@@ -128,8 +128,8 @@ struct segdesc {
 
 #define PGSHIFT         12      // log2(PGSIZE)
 #define PTXSHIFT        13      // offset of PTX in a virtual address
-#define ELXSHIFT        12      // offset of ELX in a virtual address
 #define PDXSHIFT        22      // offset of PDX in a virtual address
+#define ELXSHIFT        12      // offset of ELX in a virtual address
 
 #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
@@ -140,15 +140,18 @@ struct segdesc {
 #define ELO_D           0x004   // Dirty
 #define ELO_C           0x018   // Cache Control
 
-// Address in EntryLo register
-#define ELO_ADDR(pte)   ((uint)(pte) & ~0xFFF)
-#define ELO_FLAGS(pte)  ((uint)(pte) &  0x3FF)
+#define ELO_ADDR(elo)   ((uint)(elo) & 0x03FFFFC0)
+#define ELO_FLAGS(elo)  ((uint)(elo) & 0x3F)
+
+#define PDE_ADDR(ehi)   ((uint)(ehi) & ~0xFFF)
+#define EHI_ASID(ehi)   ((uchar)(ehi) & 0xFF)
 
 // Extract EntryLoN from PTE
-#define PTE_ELO(pte, n) ((uint)((pte) >> 4 * (1 - (n))) & 0xFFFFFFFF)
+#define PTE_ELO(pte, n) ((uint)((pte) >> (32 * (1 - (n)))) & 0xFFFFFFFF)
+
+#define ASID_MATCH(asid, pde, pte) (EHI_ASID(pde) == (asid) || (((pte) & ELO_G) && ((pte >> 32) & (ELO_G))))
 
 #ifndef __ASSEMBLER__
-typedef ulonglong pte_t;
 
 // Task state segment format
 struct taskstate {

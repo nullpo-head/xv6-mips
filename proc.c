@@ -17,7 +17,8 @@ static struct proc *initproc;
 struct proc *proc = 0;  // cpus[cpunum()].proc
 
 int nextpid = 1;
-extern void forkret(void);
+int nextasid = 1;
+extern void forkret(void) __attribute__((noreturn));
 extern void trapret(void);
 
 static void wakeup1(void *chan);
@@ -49,6 +50,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->asid = nextasid++;
+  // TODO: flush asid if nextasid > MAXASID
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -84,11 +87,11 @@ userinit(void)
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
-  inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
+  inituvm(p->pgdir, p->asid, _binary_initcode_start, (int)_binary_initcode_size);
   p->sz = PGSIZE;
   memset(p->tf, 0, sizeof(*p->tf));
   p->tf->sp = PGSIZE;
-  p->tf->epc = 0;  // beginning of initcode.S
+  p->tf->epc = (uint)0;  // beginning of initcode.S
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -105,7 +108,7 @@ growproc(int n)
   
   sz = proc->sz;
   if(n > 0){
-    if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
+    if((sz = allocuvm(proc->pgdir, proc->asid, sz, sz + n)) == 0)
       return -1;
   } else if(n < 0){
     if((sz = deallocuvm(proc->pgdir, sz, sz + n)) == 0)
@@ -130,7 +133,7 @@ fork(void)
     return -1;
 
   // Copy process state from p.
-  if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
+  if((np->pgdir = copyuvm(proc->pgdir, np->asid, proc->sz)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -321,9 +324,10 @@ yield(void)
 }
 
 // A fork child's very first scheduling by scheduler()
-// will swtch here.  "Return" to user space.
+// will swtch to 'forkret' in procasm.S. 'forkret' calls
+// this function and then jumps to trapret to "return" to user space.
 void
-forkret(void)
+finalizefork(void)
 {
   static int first = 1;
   // Still holding ptable.lock from scheduler.
@@ -334,13 +338,8 @@ forkret(void)
     // of a regular process (e.g., they call sleep), and thus cannot 
     // be run from main().
     first = 0;
-    cprintf("test\n");
     initlog();
-    cprintf("test2\n");
   }
-  
-  // Return to "caller", actually trapret
-  set_ra(trapret);
 }
 
 // Atomically release lock and sleep on chan.

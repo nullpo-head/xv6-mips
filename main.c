@@ -21,7 +21,7 @@ main(void)
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
   kvmalloc();      // kernel page table
   mpinit();        // collect info about this machine
-  //cprintf("\ncpu%d: starting xv6\n\n", cpu->id);
+  cprintf("\ncpu%d: starting xv6\n\n", cpu->id);
   picinit();       // interrupt controller
   consoleinit();   // I/O devices & their interrupts
   uartinit();      // serial port

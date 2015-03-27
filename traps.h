@@ -40,6 +40,9 @@
 
 // Processor-defined:
 #define EXC_INT          0        // Interrupt
+#define EXC_MOD          (1 << 2) // TLB modification exception
+#define EXC_TLBL         (2 << 2) // TLB exception (load or instruction fetch)
+#define EXC_TLBS         (3 << 2) // TLB exception (strore)
 #define EXC_SYSCALL      (8 << 2) // system call
 
 // Exception entry points

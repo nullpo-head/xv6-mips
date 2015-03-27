@@ -17,6 +17,8 @@ tlbrefill:
   sll    $k0, $k0, 2
   addu   $k1, $k0, $k1
   lw     $k1, 0($k1)
+  srl    $k1, $k1, 12
+  sll    $k1, $k1, 12
   mfc0   $k0, $COP0_BADVADDR
   srl    $k0, $k0, 13 - 4
   andi   $k0, $k0, 0x1ff0
@@ -39,6 +41,7 @@ gentraps:
   .set push
   .set noat
   # just jump to jtrap
+  mfc0 $k1, $COP0_EPC
   la $k0, jtrap
   jr $k0
   nop
@@ -49,9 +52,18 @@ gentraps_end:
 
 .globl jtrap
 jtrap:
-  # Build trap frame.
   .set push
   .set noat
+  # switch stack if there is proc
+  addu $k1, $zero, $sp      # save current sp in k1
+  lui  $k0, %hi(proc)
+  lw   $k0, %lo(proc)($k0)
+  beq  $k0, $zero, build_tf # if proc == 0 then go to build_tf
+  lw   $k0, 8($k0)          # $k0 = proc->kstack
+  addu $sp, $zero, $k0
+
+build_tf:
+  # Build trap frame.
   addiu $sp, $sp, -148
   sw $at, 0($sp)
   sw $v0, 4($sp)
@@ -79,7 +91,7 @@ jtrap:
   sw $t8, 92($sp)
   sw $t9, 96($sp)
   sw $gp, 108($sp)
-  sw $sp, 112($sp)
+  sw $k1, 112($sp)          # previous stack pointer is stored in k1
   sw $fp, 116($sp)
   sw $ra, 120($sp)
 
@@ -105,12 +117,11 @@ jtrap:
   # Return falls through to trapret...
 .globl trapret
 trapret:
+  # No need to restore status, k0 and k1. 
   lw $t0, 132($sp)
   lw $t1, 136($sp)
-  lw $t3, 144($sp)
   mtc0 $t0, $COP0_EPC
   mtc0 $t1, $COP0_ERROREPC
-  mtc0 $t3, $COP0_STATUS
 
   lw $at, 0($sp)
   lw $v0, 4($sp)
@@ -141,13 +152,7 @@ trapret:
   lw $fp, 116($sp)
   lw $ra, 120($sp)
 
-  lw $k0, 124($sp)
-  lw $k1, 128($sp)
-  mthi $k0
-  mtlo $k1
-
   lw $sp, 112($sp)
 
-  addiu $sp, $sp, 148
   eret
   .set pop

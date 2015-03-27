@@ -7,6 +7,13 @@
 # exec(init, argv)
 .globl start
 start:
+  nop
+  nop
+  nop
+  nop
+  addiu $t0, $t0, 1
+  j start
+  nop
 /*  pushl $argv
   pushl $init
   pushl $0  // where caller pc would be

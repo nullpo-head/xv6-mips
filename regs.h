@@ -9,6 +9,7 @@
 #define COP0_BADVADDR  8
 #define COP0_ENTRYLO0  2
 #define COP0_ENTRYLO1  3
+#define COP0_ENTRYHI   10
 
 
 // Status register flags
@@ -18,6 +19,7 @@
 #define STATUS_KSU  0x00000018
 #define STATUS_IM   0x0000ff00
 #define STATUS_BEV  0x00400000
+#define STATUS_CU0  0x10000000
 
 // Cause register flags
 #define CAUSE_EXC   0x0000007c
