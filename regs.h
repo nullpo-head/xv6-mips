@@ -2,14 +2,14 @@
 // MIPS register related constants.
 
 // Coprocessor 0 register names
+#define COP0_ENTRYLO0   2
+#define COP0_ENTRYLO1   3
+#define COP0_BADVADDR   8
+#define COP0_ENTRYHI   10
 #define COP0_STATUS    12
 #define COP0_CAUSE     13
 #define COP0_EPC       14
 #define COP0_ERROREPC  30
-#define COP0_BADVADDR  8
-#define COP0_ENTRYLO0  2
-#define COP0_ENTRYLO1  3
-#define COP0_ENTRYHI   10
 
 
 // Status register flags

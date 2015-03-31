@@ -36,6 +36,7 @@ exec(char *path, char **argv)
     goto bad;
 
   // Load program into memory.
+  proc->asid = nextasid();
   sz = 0;
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
@@ -69,16 +70,15 @@ exec(char *path, char **argv)
     sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
     if(copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
       goto bad;
-    ustack[3+argc] = sp;
+    ustack[argc] = sp;
   }
-  ustack[3+argc] = 0;
+  ustack[argc] = 0;
 
-  ustack[0] = 0xffffffff;  // fake return PC
-  ustack[1] = argc;
-  ustack[2] = sp - (argc+1)*4;  // argv pointer
+  proc->tf->a0 = argc;
+  proc->tf->a1 = sp - (argc+1)*4;  // argv pointer
 
   sp -= (3+argc+1) * 4;
-  if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
+  if(copyout(pgdir, sp, ustack, (argc+1)*4) < 0)
     goto bad;
 
   // Save program name for debugging.

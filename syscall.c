@@ -7,11 +7,10 @@
 #include "mips.h"
 #include "syscall.h"
 
-// User code makes a system call with INT T_SYSCALL.
-// System call number in %eax.
-// Arguments on the stack, from the user call to the C
-// library system call function. The saved user %esp points
-// to a saved program counter, and then the first argument.
+// User code makes a system call with syscall.
+// System call number in v0.
+// Arguments on a0, a1, a2 and a3 and the more
+// than four will be located in the stack.
 
 // Fetch the int at addr from the current process.
 int
@@ -45,7 +44,12 @@ fetchstr(uint addr, char **pp)
 int
 argint(int n, int *ip)
 {
-  return fetchint(proc->tf->sp + 4 + 4*n, ip);
+  if(n < 4){
+    *ip = *(&proc->tf->a0 + n);
+    return 0;
+  } else {
+    return fetchint(proc->tf->sp+4*n, ip);
+  }
 }
 
 // Fetch the nth word-sized system call argument as a pointer

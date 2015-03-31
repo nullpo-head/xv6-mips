@@ -87,13 +87,13 @@ pushcli(void)
 {
   disableinterrupt();
   if(cpu->ncli++ == 0)
-    cpu->intena = read_cop0_status() & STATUS_IE;
+    cpu->intena = is_interruptible();
 }
 
 void
 popcli(void)
 {
-  if(read_cop0_status()&STATUS_IE)
+  if(is_interruptible())
     panic("popcli - interruptible");
   if(--cpu->ncli < 0)
     panic("popcli");

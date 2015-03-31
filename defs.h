@@ -122,6 +122,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 void            finalizefork(void);
+int             nextasid(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

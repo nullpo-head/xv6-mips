@@ -140,10 +140,10 @@ struct segdesc {
 #define ELO_D           0x004   // Dirty
 #define ELO_C           0x018   // Cache Control
 
-#define ELO_ADDR(elo)   ((uint)(elo) & 0x03FFFFC0)
+#define ELO_ADDR(elo)   (((uint)(elo) & 0x03FFFFC0) << 6)
 #define ELO_FLAGS(elo)  ((uint)(elo) & 0x3F)
 
-#define PDE_ADDR(ehi)   ((uint)(ehi) & ~0xFFF)
+#define PDE_ADDR(pde)   ((pde) & ~0xFFF)
 #define EHI_ASID(ehi)   ((uchar)(ehi) & 0xFF)
 
 // Extract EntryLoN from PTE

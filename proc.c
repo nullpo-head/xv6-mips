@@ -17,7 +17,6 @@ static struct proc *initproc;
 struct proc *proc = 0;  // cpus[cpunum()].proc
 
 int nextpid = 1;
-int nextasid = 1;
 extern void forkret(void) __attribute__((noreturn));
 extern void trapret(void);
 
@@ -50,7 +49,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->asid = nextasid++;
+  p->asid = nextasid();
   // TODO: flush asid if nextasid > MAXASID
   release(&ptable.lock);
 
@@ -117,6 +116,17 @@ growproc(int n)
   proc->sz = sz;
   switchuvm(proc);
   return 0;
+}
+
+int
+nextasid(void)
+{
+  static int nasid = 1;
+  // TODO: flush asid if nextasid > MAXASID
+  if (nasid > 255) {
+    panic("asid");
+  }
+  return nasid++;
 }
 
 // Create a new process copying p as the parent.
@@ -267,7 +277,6 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     enableinterrupt();
-    clerl();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
@@ -306,7 +315,7 @@ sched(void)
     panic("sched locks");
   if(proc->state == RUNNING)
     panic("sched running");
-  if(read_cop0_status()&STATUS_IE)
+  if(is_interruptible())
     panic("sched interruptible");
   intena = cpu->intena;
   swtch(&proc->context, cpu->scheduler);

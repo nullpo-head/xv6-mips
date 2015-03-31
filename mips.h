@@ -60,48 +60,6 @@ stosl(void *addr, int data, int cnt)
   }
 }
 
-struct segdesc;
-
-static inline void
-lgdt(struct segdesc *p, int size)
-{
-  /*volatile ushort pd[3];
-
-  pd[0] = size-1;
-  pd[1] = (uint)p;
-  pd[2] = (uint)p >> 16;
-
-  asm volatile("lgdt (%0)" : : "r" (pd));*/
-}
-
-struct gatedesc;
-
-static inline void
-lidt(struct gatedesc *p, int size)
-{
-  /*volatile ushort pd[3];
-
-  pd[0] = size-1;
-  pd[1] = (uint)p;
-  pd[2] = (uint)p >> 16;
-
-  asm volatile("lidt (%0)" : : "r" (pd));*/
-}
-
-static inline void
-ltr(ushort sel)
-{
-  //asm volatile("ltr %0" : : "r" (sel));
-}
-
-static inline uint
-readeflags(void)
-{
-  uint eflags;
-  //asm volatile("pushfl; popl %0" : "=r" (eflags));
-  return eflags;
-}
-
 static inline uint
 read_cop0_status(void)
 {
@@ -116,54 +74,34 @@ write_cop0_status(uint val)
   asm volatile("mtc0 %0, $12" : : "r" (val));
 }
 
-static inline void
-loadgs(ushort v)
+static inline uint
+read_cop0_bad(void)
 {
-  //asm volatile("movw %0, %%gs" : : "r" (v));
+  uint val;
+  asm volatile("mfc0 %0, $8" : "=r" (val));
+  return val;
 }
 
-static inline void
-cli(void)
+static inline int
+is_interruptible(void)
 {
-  //asm volatile("cli");
+  return (read_cop0_status() & (STATUS_IE | STATUS_EXL | STATUS_ERL)) == STATUS_IE;
 }
 
-// TODO
 static inline void
 disableinterrupt(void)
 {
-  write_cop0_status(read_cop0_status() & (~STATUS_IE));
+  if (is_interruptible()) {
+    write_cop0_status(read_cop0_status() | STATUS_EXL); // Assert EXL bit so that ERET can re-enable interrupt
+  }
 }
 
 static inline void
 enableinterrupt(void)
 {
-  write_cop0_status(read_cop0_status() | STATUS_IE);
-}
-
-static inline void
-clerl(void)
-{
-  write_cop0_status(read_cop0_status() & ~STATUS_ERL);
-}
-
-static inline void
-sti(void)
-{
-  //asm volatile("sti");
-}
-
-static inline uint
-xchg(volatile uint *addr, uint newval)
-{
-  uint result;
-  
-  // The + in "+m" denotes a read-modify-write operand.
-  /*asm volatile("lock; xchgl %0, %1" :
-               "+m" (*addr), "=a" (result) :
-               "1" (newval) :
-               "cc");*/
-  return result;
+  if (!is_interruptible()) {
+    write_cop0_status((read_cop0_status() & ~STATUS_KSU & ~STATUS_EXL & ~STATUS_ERL) | STATUS_IE);
+  }
 }
 
 // Return old val
@@ -178,21 +116,6 @@ atomic_swap(volatile uint *addr, uint newval)
                "r" (addr), "r" (newval) :
                "t0");
   return oldval;
-}
-
-
-static inline uint
-rcr2(void)
-{
-  uint val;
-  //asm volatile("movl %%cr2,%0" : "=r" (val));
-  return val;
-}
-
-static inline void
-lcr3(uint val) 
-{
-  //asm volatile("movl %0,%%cr3" : : "r" (val));
 }
 
 static inline void

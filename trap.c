@@ -38,6 +38,7 @@ trap(struct trapframe *tf)
     if(proc->killed)
       exit();
     proc->tf = tf;
+    proc->tf->epc += 4; // Just increase epc. Assume the syscall NOT to be in a delay slot.
     syscall();
     if(proc->killed)
       exit();
@@ -80,15 +81,15 @@ trap(struct trapframe *tf)
   } else {
     if(proc == 0 || (tf->status & STATUS_KSU) == 0){
       // In kernel, it must be our mistake.
-      cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
-              tf->cause, cpu->id, tf->epc, rcr2());
+      cprintf("unexpected trap %d from cpu %d eip %x (bad=0x%x)\n",
+              tf->cause, cpu->id, tf->epc, read_cop0_bad());
       panic("trap");
     }
     // In user space, assume process misbehaved.
     cprintf("pid %d %s: trap %d on cpu %d "
             "eip 0x%x addr 0x%x--kill proc\n",
             proc->pid, proc->name, tf->cause, cpu->id, tf->epc, 
-            rcr2());
+            read_cop0_bad());
     proc->killed = 1;
   }
 

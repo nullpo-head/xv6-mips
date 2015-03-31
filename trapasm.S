@@ -1,11 +1,16 @@
+#include "param.h"
+#include "traps.h"
 #include "regs.h"
 #include "mmu.h"
 
-// TODO: add noat
 # Enable MIPS dependent GAS macros.
 .set macro  
 
-  # TLB miss handling
+# ------------------------
+# TLB miss handler, which will be copied to offset + 0x0 in tvinit
+# Max 32 instructions.
+# ------------------------
+
 .globl tlbrefill
 tlbrefill:
   .set   push
@@ -20,8 +25,8 @@ tlbrefill:
   srl    $k1, $k1, 12
   sll    $k1, $k1, 12
   mfc0   $k0, $COP0_BADVADDR
-  srl    $k0, $k0, 13 - 4
-  andi   $k0, $k0, 0x1ff0
+  srl    $k0, $k0, 13 - 3
+  andi   $k0, $k0, 0x0ff8
   addu   $k1, $k0, $k1
   lw     $k0, 0($k1)
   mtc0   $k0, $COP0_ENTRYLO1
@@ -35,32 +40,54 @@ tlbrefill:
 .globl tlbrefill_end
 tlbrefill_end:
 
-  # General exceptions, which will be copied to offset + 0x180 in tvinit
+# ------------------------
+# General exceptions handler, which will be copied to offset + 0x180 in tvinit
+# Max 32 instructions.
+# ------------------------
 .globl gentraps
 gentraps:
   .set push
   .set noat
-  # just jump to jtrap
-  mfc0 $k1, $COP0_EPC
-  la $k0, jtrap
+  .set noreorder
+  # just jump to go_trap
+  mfc0 $k1, $COP0_CAUSE
+  andi $k1, $k1, CAUSE_EXC
+  addiu $k0, $zero, EXC_TLBL
+  beq $k0, $k1, tlb_miss
+  nop
+  addiu $k0, $zero, EXC_TLBS
+  beq $k0, $k1, tlb_miss
+  nop
+  la $k0, go_trap
   jr $k0
+  nop
+tlb_miss:
+  addu $k0, $zero, $zero
+  lui $k0, 0x8000
+  jr $k0                    # jump to 0x80000000, tlb refill handler.
   nop
   .set pop
 
 .globl gentraps_end
 gentraps_end:
 
-.globl jtrap
-jtrap:
+# ------------------------
+# jump from gentraps. 
+# Build trapframe and go to "trap" defined in trap.c
+# ------------------------
+.globl go_trap
+go_trap:
   .set push
   .set noat
+  .set noreorder
   # switch stack if there is proc
   addu $k1, $zero, $sp      # save current sp in k1
   lui  $k0, %hi(proc)
   lw   $k0, %lo(proc)($k0)
   beq  $k0, $zero, build_tf # if proc == 0 then go to build_tf
-  lw   $k0, 8($k0)          # $k0 = proc->kstack
-  addu $sp, $zero, $k0
+  nop
+  lw   $k0, 8($k0)          # $k0 = proc->kstack + KSTACKSIZE
+  addiu $sp, $k0, KSTACKSIZE
 
 build_tf:
   # Build trap frame.

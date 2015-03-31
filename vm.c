@@ -141,7 +141,6 @@ void
 switchuvm(struct proc *p)
 {
   pte_t entry_pte;
-  uint ehi, el0, el1;
 
   pushcli();
   if(p->pgdir == 0)
@@ -215,7 +214,7 @@ allocuvm(pde_t *pgdir, char asid, uint oldsz, uint newsz)
       return 0;
     }
     memset(mem, 0, PGSIZE);
-    mappages(pgdir, asid, (char*)a, PGSIZE, v2p(mem), ELO_V);
+    mappages(pgdir, asid, (char*)a, PGSIZE, v2p(mem), ELO_D);
   }
   return newsz;
 }
@@ -262,7 +261,7 @@ freevm(pde_t *pgdir)
   deallocuvm(pgdir, KERNBASE, 0);
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i]){
-      char *v = (char*)pgdir[i];
+      char *v = (char*)PDE_ADDR(pgdir[i]);
       kfree(v);
     }
   }
