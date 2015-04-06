@@ -92,7 +92,7 @@ static inline void
 disableinterrupt(void)
 {
   if (is_interruptible()) {
-    write_cop0_status(read_cop0_status() | STATUS_EXL); // Assert EXL bit so that ERET can re-enable interrupt
+    write_cop0_status(read_cop0_status() & ~STATUS_IE);
   }
 }
 
@@ -100,7 +100,7 @@ static inline void
 enableinterrupt(void)
 {
   if (!is_interruptible()) {
-    write_cop0_status((read_cop0_status() & ~STATUS_KSU & ~STATUS_EXL & ~STATUS_ERL) | STATUS_IE);
+    write_cop0_status((read_cop0_status() & ~STATUS_EXL & ~STATUS_ERL) | STATUS_IE);
   }
 }
 

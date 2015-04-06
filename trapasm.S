@@ -135,6 +135,10 @@ build_tf:
   sw $t1, 136($sp)
   sw $t2, 140($sp)
   sw $t3, 144($sp)
+
+  ori $t3, $t3, STATUS_IE | STATUS_KSU | STATUS_EXL
+  xori $t3, $t3, STATUS_IE | STATUS_KSU | STATUS_EXL
+  mtc0 $t3, $COP0_STATUS
   
   # Call trap(tf), where tf=%esp
   move $a0, $sp
@@ -147,8 +151,10 @@ trapret:
   # No need to restore status, k0 and k1. 
   lw $t0, 132($sp)
   lw $t1, 136($sp)
+  lw $t2, 144($sp)
   mtc0 $t0, $COP0_EPC
   mtc0 $t1, $COP0_ERROREPC
+  mtc0 $t2, $COP0_STATUS
 
   lw $at, 0($sp)
   lw $v0, 4($sp)

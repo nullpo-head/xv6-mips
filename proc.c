@@ -90,6 +90,7 @@ userinit(void)
   p->sz = PGSIZE;
   memset(p->tf, 0, sizeof(*p->tf));
   p->tf->sp = PGSIZE;
+  p->tf->status = (read_cop0_status() | STATUS_KSU_USER | STATUS_EXL | STATUS_IE) & ~STATUS_ERL;
   p->tf->epc = (uint)0;  // beginning of initcode.S
 
   safestrcpy(p->name, "initcode", sizeof(p->name));

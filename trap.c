@@ -47,9 +47,6 @@ trap(struct trapframe *tf)
 
   if(exccode == EXC_INT){
     uint irq = picgetirq();
-    if (irq != IRQ_TIMER) {
-        cprintf("interrupt:%d\n", irq);
-    }
     switch(irq){
     case IRQ_TIMER:
       if(cpu->id == 0){

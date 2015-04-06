@@ -21,5 +21,7 @@
 #define STATUS_BEV  0x00400000
 #define STATUS_CU0  0x10000000
 
+#define STATUS_KSU_USER  0x00000010
+
 // Cause register flags
 #define CAUSE_EXC   0x0000007c

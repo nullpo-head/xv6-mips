@@ -77,9 +77,10 @@ exec(char *path, char **argv)
   proc->tf->a0 = argc;
   proc->tf->a1 = sp - (argc+1)*4;  // argv pointer
 
-  sp -= (3+argc+1) * 4;
+  sp -= (argc+1) * 4;
   if(copyout(pgdir, sp, ustack, (argc+1)*4) < 0)
     goto bad;
+  sp -= 4 * 4;  // leave first four words undefined for o32 calling convention.
 
   // Save program name for debugging.
   for(last=s=path; *s; s++)
