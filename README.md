@@ -1,7 +1,10 @@
+# Xv6-mips
+
 This is MIPS port of Xv6, educational reimplementation of UNIX v6.  
 Visit https://pdos.csail.mit.edu/6.828/2012/xv6.html for official information of Xv6.
 
-This is written for MIPS R4000 and runs on qemu MIPS arch now.
+This is written for MIPS R4000 and runs on qemu MIPS arch now.  
+It is still in progress and unstable.
 
 ## Building and Running
 
