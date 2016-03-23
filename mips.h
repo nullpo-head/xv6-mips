@@ -6,7 +6,7 @@
 
 static int io_port_base = 0xb4000000;
 
-static inline uchar
+static inline volatile uchar
 inb(ushort port)
 {
   return *((uchar *) (io_port_base + port));
