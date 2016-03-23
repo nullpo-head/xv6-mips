@@ -10,7 +10,6 @@
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 pde_t *curpgdir; // current page directory
-struct segdesc gdt[NSEGS];
 
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
